@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Picker, Modal, TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, Modal, TouchableHighlight } from 'react-native';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { AppConsumer } from './Context';
