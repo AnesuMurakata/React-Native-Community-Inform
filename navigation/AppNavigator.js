@@ -4,8 +4,11 @@ import SignUpScreen from '../screens/SignUpScreen';
 import PostsScreen from '../screens/PostsScreen';
 import AuthLoadingScreen from '../screens/AuthLoadingScreen';
 import MainTabNavigator from './MainTabNavigator';
+import ViewPosts from '../screens/ViewPosts';
+import MakeAdmin from '../screens/MakeAdminScreen';
 
-const AppStack = createStackNavigator({ Test: PostsScreen, Home: MainTabNavigator});
+const AppStack = createStackNavigator({ Posts: ViewPosts, Home: MainTabNavigator});
+const AdminAppStack = createStackNavigator({ Admin: MakeAdmin, Home: MainTabNavigator});
 const AuthStack = createStackNavigator({ SignIn: SignUpScreen });
 
 export default createAppContainer(
@@ -15,10 +18,11 @@ export default createAppContainer(
     AuthLoading: AuthLoadingScreen,
     App: AppStack,
     Auth: AuthStack,
+    Admin: AdminAppStack,
     //Main: MainTabNavigator,
   },
   {
-    initialRouteName: 'App',
+    initialRouteName: 'AuthLoading',
   }
   )
 );
