@@ -1,6 +1,5 @@
 import React from 'react';
 import {Button, Text, View} from 'react-native';
-import * as firebase from 'firebase';
 import Firebase from '../Firebase';
 import MainTabNavigator from '../navigation/MainTabNavigator';
 import StackNavigator from 'react-navigation';
@@ -23,12 +22,24 @@ export default class SignUpScreen extends React.Component{
         Firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
             this.setState({error:'',loading:false});
-            this.props.navigation.navigate('App');
+            //this.props.navigation.navigate('App');
         })
         .catch(() => {
             this.setState({error:"Authentication failed", loading:false});
 
         })
+
+        Firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                user.getIdTokenResult().then(idTokenResult => {
+                    if (idTokenResult.claims.admin == 'true') {
+                        this.props.navigation.navigate('Admin');
+                    }
+                    else {
+                        this.props.navigation.navigate('App');
+                    } 
+                })
+            }});
     }
 
     onSignUpPress(){
@@ -38,7 +49,7 @@ export default class SignUpScreen extends React.Component{
         Firebase.auth().createUserWithEmailAndPassword(email, password)
         .then(() => {
             this.setState({error:'',loading:false});
-            this.props.navigation.navigate('App');
+            this.props.navigation.navigate('Auth');
         })
         .catch(() => {
             this.setState({error:"Authentication failed", loading:false});
