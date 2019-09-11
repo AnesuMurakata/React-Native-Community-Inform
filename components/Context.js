@@ -32,20 +32,25 @@ export class AppProvider extends React.Component {
         super(props);
         let ds = new ListView.DataSource({rowHasChanged:(r1, r2) => r1 !== r2});
         let as = new ListView.DataSource({rowHasChanged:(r1, r2) => r1 !== r2});
-        global.postCount = 9;
+        global.postCount = 15;
         this.state = {
             postDataSource: as,
             category: 'All',
             postCount: ds,
             postImageUrl: 'a',
+            locationFilter: 'a',
+            province: 'Western Cape',
+            city: 'Cape Town',
+            suburb: 'Rondebosch',
         };
 
-        global.postTitle = "Man U";
-        global.postBody = "Ole advises fans to be patient with young squad. Says things take time.";
-        global.postCategory = "Sport";
+        global.postTitle = "Great Electrician";
+        global.postBody = "I recently got my re-wiring done by Alex and he did a great job!";
+        global.postCategory = "Referral";
 
         // Load every post initially
-        global.categoryRef = this.getRef().orderByChild('title');
+        global.categoryRef; //= this.getRef().orderByChild('title');
+        global.refForAll;
 
         global.postCountRef = Firebase.database().ref('count').orderByChild('postCount');
 
@@ -57,13 +62,15 @@ export class AppProvider extends React.Component {
     }
 
     componentWillMount(){
-        this.getItems(global.categoryRef);
-        this.getPostCount(global.postCountRef);
+        this.getPostsByLocation('Western Cape', 'All', 'All');
+        //this.addPost(global.postTitle, global.postBody, global.postCategory, 15, 'Gauteng', 'Johannesburg', 'Sandton');
+        //this.getItems(global.categoryRef);
+        //this.getPostCount(global.postCountRef);
         //this.storePostCount();
     }
 
     componentDidMount(){
-        this.getItems(global.categoryRef);
+        //this.getItems(global.categoryRef);
         //this.getPostCount(global.postCountRef);
         //this.storePostCount();
     }
@@ -85,6 +92,60 @@ export class AppProvider extends React.Component {
             });
             //console.log(items[0].title);
         });
+    }
+
+    getFilteredItems(categoryRef, category){
+        categoryRef.on('value', (snap) => {
+            let items = [];
+            snap.forEach((child) => {
+                // Filter on the client side by category
+                if(child.val().category == category) {
+                    items.push({
+                        title: child.val().title,
+                        body: child.val().body,
+                        imageUrl: child.val().imageUrl,
+                        _key: child.key,
+                    });
+                }
+            });
+            this.setState({
+                postDataSource: this.state.postDataSource.cloneWithRows(items)
+            });
+            //console.log(items[0].title);
+        });
+    }
+
+    getPostsByLocation(province, city, suburb){
+        if(city == 'All' && suburb == 'All'){
+            this.setState({locationFilter: 'province', province: province});
+            global.categoryRef = this.getRef().orderByChild('province').equalTo(province);
+            this.getItems(global.categoryRef);
+        }
+        if(city != 'All' && suburb == 'All'){
+            this.setState({locationFilter: 'city', city: city});
+            global.categoryRef = this.getRef().orderByChild('city').equalTo(city);
+            this.getItems(global.categoryRef);
+        }
+        if(city != 'All' && suburb != 'All'){
+            this.setState({locationFilter: 'suburb', suburb: suburb});
+            global.categoryRef = this.getRef().orderByChild('suburb').equalTo(suburb);
+            this.getItems(global.categoryRef);
+        }
+    }
+
+    getPostsByProvince(province){
+        global.categoryRef = this.getRef().orderByChild('province').equalTo(province);
+        this.getItems(global.categoryRef);
+    }
+
+    getPostsByCity(city){
+        global.categoryRef = this.getRef().orderByChild('city').equalTo(city);
+        this.getItems(global.categoryRef);
+    }
+
+    getPostsBySuburb(suburb){
+        global.categoryRef = this.getRef().orderByChild('suburb').equalTo(suburb);
+        this.getItems(global.categoryRef);
     }
 
     pressRow(item){
@@ -120,20 +181,53 @@ export class AppProvider extends React.Component {
     } 
 
     setFilter = async (selectedCategory) => {
-        // Wait for state to be changed before proceeding
-        await this.setState({category: selectedCategory});
-        this.selectPosts(this.state.category);
+        if(selectedCategory == 'All'){
+            var locationValue = this.state.locationFilter;
+            switch(locationValue){
+                case 'province':
+                    this.getPostsByProvince(this.state.province);
+                    break;
+                case 'city':
+                    this.getPostsByCity(this.state.city);
+                    break;
+                case 'suburb':
+                    this.getPostsBySuburb(this.state.suburb);
+                    break;
+            }
+            // global.refForAll = this.getRef().orderByChild('title');
+            // this.getItems(global.refForAll);
+        }
+        else{
+            // Wait for state to be changed before proceeding
+            await this.setState({category: selectedCategory});
+            this.selectPosts(this.state.category);
+        }
     }
 
     selectPosts(selectedCategory){
+        var locationValue = this.state.locationFilter;
+        switch(locationValue){
+            case 'province':
+                global.categoryRef = this.getRef().orderByChild('province').equalTo(this.state.province);
+                this.getFilteredItems(global.categoryRef, selectedCategory);
+                break;
+            case 'city':
+                global.categoryRef = this.getRef().orderByChild('city').equalTo(this.state.city);
+                this.getFilteredItems(global.categoryRef, selectedCategory);
+                break;
+            case 'suburb':
+                global.categoryRef = this.getRef().orderByChild('suburb').equalTo(this.state.suburb);
+                this.getFilteredItems(global.categoryRef, selectedCategory);
+                break;
+        }
         // Select posts with the selected category from the database
-        global.categoryRef = this.getRef().orderByChild('category').equalTo(selectedCategory);
-        this.getItems(global.categoryRef);
-        console.log(global.categoryRef);
+        // global.categoryRef = this.getRef().orderByChild('category').equalTo(selectedCategory);
+        // this.getItems(global.categoryRef);
+        // console.log(global.categoryRef);
     }
 
     // Method to add Posts to database
-    addPost(title, body, category, postNumber){
+    addPost(title, body, category, postNumber, province, city, suburb){
         this.onChooseImagePress();
         Firebase.database().ref('posts/' + postNumber).set(
             {
@@ -142,6 +236,9 @@ export class AppProvider extends React.Component {
                 category: category,
                 postNumber: postNumber,
                 imageUrl: this.state.postImageUrl,
+                province: province,
+                city: city,
+                suburb: suburb,
             }
         ).then(() => {
             console.log('Post was INSERTED!');    
